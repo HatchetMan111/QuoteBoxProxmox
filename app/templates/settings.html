@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>QuoteBox – Einstellungen</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+  <div class="settings-wrap">
+    <div class="settings-card">
+      <h1>QuoteBox</h1>
+      <p class="subtitle">Wähle, welche Sprüche gezeigt werden und wie.</p>
+
+      <div class="field-group">
+        <span class="field-label">Kategorien</span>
+        <div class="category-grid" id="category-grid"></div>
+      </div>
+
+      <div class="field-group">
+        <span class="field-label">Wechselintervall</span>
+        <div class="range-row">
+          <input type="range" id="interval" min="5" max="120" step="5" value="20">
+          <span class="range-value" id="interval-value">20 s</span>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <span class="field-label">Darstellung</span>
+        <div class="theme-choice">
+          <button type="button" id="theme-dark" data-theme="dark">Dunkel</button>
+          <button type="button" id="theme-light" data-theme="light">Hell</button>
+        </div>
+      </div>
+
+      <div class="field-group">
+        <div class="toggle-row">
+          <span class="field-label" style="margin:0;">Uhrzeit &amp; Datum anzeigen</span>
+          <label class="switch">
+            <input type="checkbox" id="show-clock">
+            <span class="track"><span class="thumb"></span></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="save-bar">
+        <button class="save-btn" id="save-btn">Speichern</button>
+        <span class="save-status" id="save-status">Gespeichert</span>
+      </div>
+
+      <a class="back-link" href="/display">← Zurück zur Anzeige</a>
+    </div>
+  </div>
+
+  <script src="/static/js/settings.js"></script>
+</body>
+</html>

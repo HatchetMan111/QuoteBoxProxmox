@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+app/data/quotes.json
+app/data/settings.json
+venv/

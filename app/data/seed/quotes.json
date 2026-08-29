@@ -1,0 +1,41 @@
+[
+  {"category": "stoic", "text": "Du hast Macht über deinen Geist, nicht über äußere Ereignisse. Erkenne das, und du findest Stärke.", "author": "Marcus Aurel"},
+  {"category": "stoic", "text": "Es sind nicht die Dinge selbst, die uns beunruhigen, sondern unsere Urteile über die Dinge.", "author": "Epiktet"},
+  {"category": "stoic", "text": "Wer sein Leben nach der Natur ausrichtet, wird nie arm sein.", "author": "Seneca"},
+  {"category": "stoic", "text": "Verschwende keine Zeit mehr mit Streit darüber, wie ein guter Mensch sein soll. Sei einer.", "author": "Marcus Aurel"},
+  {"category": "stoic", "text": "Nicht weil es schwer ist, wagen wir es nicht, sondern weil wir es nicht wagen, ist es schwer.", "author": "Seneca"},
+  {"category": "stoic", "text": "Zuerst sage dir, was du sein willst, und dann tu, was zu tun ist.", "author": "Epiktet"},
+  {"category": "stoic", "text": "Der Weise trägt seinen Reichtum in sich selbst.", "author": "Seneca"},
+  {"category": "stoic", "text": "Das Hindernis auf dem Weg wird zum Weg.", "author": "Marcus Aurel"},
+
+  {"category": "calendar", "text": "Jeder Tag ist ein neues Blatt – schreib etwas hinein, das dir gefällt.", "author": "Kalenderspruch"},
+  {"category": "calendar", "text": "Kleine Schritte, jeden Tag, ergeben am Ende einen langen Weg.", "author": "Kalenderspruch"},
+  {"category": "calendar", "text": "Man muss die Feste feiern, wie sie fallen – und die Tage, wie sie kommen.", "author": "Volksweisheit"},
+  {"category": "calendar", "text": "Wer den Augenblick verpasst, verpasst manchmal sein ganzes Glück.", "author": "Kalenderspruch"},
+  {"category": "calendar", "text": "Ordnung ist das halbe Leben – die andere Hälfte macht Freude.", "author": "Volksweisheit"},
+  {"category": "calendar", "text": "Ein guter Plan für heute ist besser als ein perfekter Plan für morgen.", "author": "Kalenderspruch"},
+  {"category": "calendar", "text": "Was du heute nicht tust, tut sich morgen nicht von selbst.", "author": "Volksweisheit"},
+
+  {"category": "motivation", "text": "Der Berg wächst nicht über deinen Kopf hinaus – du wächst mit ihm.", "author": "Motivation"},
+  {"category": "motivation", "text": "Anfangen ist die halbe Arbeit. Der Rest ist Durchhalten.", "author": "Motivation"},
+  {"category": "motivation", "text": "Zweifel tötet mehr Träume als Scheitern es je könnte.", "author": "Motivation"},
+  {"category": "motivation", "text": "Du musst nicht großartig sein, um anzufangen. Aber anfangen, um großartig zu werden.", "author": "Motivation"},
+  {"category": "motivation", "text": "Jeder Meister war einmal ein Anfänger, der nicht aufgegeben hat.", "author": "Motivation"},
+  {"category": "motivation", "text": "Disziplin ist die Brücke zwischen Zielen und Ergebnissen.", "author": "Motivation"},
+  {"category": "motivation", "text": "Wachstum beginnt dort, wo die Komfortzone endet.", "author": "Motivation"},
+
+  {"category": "zen", "text": "Atme ein. Atme aus. Mehr braucht dieser Moment nicht.", "author": "Zen"},
+  {"category": "zen", "text": "Der ruhige Geist sieht klarer als der schnelle.", "author": "Zen"},
+  {"category": "zen", "text": "Was du suchst, ist bereits hier, in diesem Augenblick.", "author": "Zen"},
+  {"category": "zen", "text": "Ein leerer Becher kann gefüllt werden. Ein voller nicht.", "author": "Zen"},
+  {"category": "zen", "text": "Der Fluss zwingt sich nicht durch den Stein – er umfließt ihn, sanft und beständig.", "author": "Zen"},
+  {"category": "zen", "text": "Loslassen ist kein Verlust, sondern Platz für Neues.", "author": "Zen"},
+  {"category": "zen", "text": "Stille ist keine Leere, sondern Raum zum Hören.", "author": "Zen"},
+
+  {"category": "humor", "text": "Ich bin nicht faul, ich befinde mich im Energiesparmodus.", "author": "Alltagsweisheit"},
+  {"category": "humor", "text": "Kaffee: Weil Erwachsensein sonst niemand freiwillig machen würde.", "author": "Alltagsweisheit"},
+  {"category": "humor", "text": "Mein Bett und ich haben eine wunderbare Beziehung. Wir trennen uns nur ungern.", "author": "Alltagsweisheit"},
+  {"category": "humor", "text": "Ich habe nichts vergessen. Ich habe es nur in den unwichtigen Ordner verschoben.", "author": "Alltagsweisheit"},
+  {"category": "humor", "text": "Sport ist Mord – sagte niemand, der jemals einen Kühlschrank tragen musste.", "author": "Alltagsweisheit"},
+  {"category": "humor", "text": "Montags ist mein Humor noch im Standby-Modus.", "author": "Alltagsweisheit"}
+]
