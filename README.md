@@ -9,23 +9,6 @@ Kategorien: **Stoisch**, **Kalendersprüche**, **Motivation**, **Zen**, **Humor*
 - `http://<LXC-IP>:5000/display`  – Vollbild-Ansicht fürs Tablet
 - `http://<LXC-IP>:5000/settings` – Kategorien, Wechselintervall, Hell/Dunkel, Uhrzeit an/aus
 
-## Vorbereitung (einmalig, bevor du installierst)
-
-1. Leeres GitHub-Repo anlegen, z. B. `quotebox-proxmox`.
-2. Diesen Ordner dort hineinpushen (Befehle unten).
-3. In **`ct/quotebox.sh`** und **`install/quotebox-install.sh`** den Platzhalter
-   `HatchetMan111/QuoteBoxProxmox` durch deinen echten Repo-Pfad ersetzen und committen.
-
-```bash
-cd quotebox-proxmox
-git init
-git add .
-git commit -m "Initial commit"
-git branch -M main
-git remote add origin https://github.com/HatchetMan111/QuoteBoxProxmox.git
-git push -u origin main
-```
-
 ## Installation (Proxmox-Host-Shell)
 
 ```bash
