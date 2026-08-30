@@ -53,6 +53,32 @@ start
 build_container
 description
 
+msg_info "Prüfe Erreichbarkeit von außen (vom Proxmox-Host aus)"
+EXTERNAL_OK=0
+for i in $(seq 1 10); do
+  if curl -fsS -m 3 "http://${IP}:5000/health" >/dev/null 2>&1; then
+    EXTERNAL_OK=1
+    break
+  fi
+  sleep 1
+done
+
+if [[ "$EXTERNAL_OK" -ne 1 ]]; then
+  msg_error "http://${IP}:5000/health antwortet NICHT vom Host aus (Container selbst meldete beim Setup Erfolg)."
+  echo -e "${YW}Das ist so gut wie immer eine Firewall/Netzwerk-Frage, keine App-Frage. Prüfe der Reihe nach:${CL}"
+  echo -e "  1) Proxmox-Firewall aktiv? Datacenter -> Firewall / Node -> Firewall / CT ${CTID} -> Firewall"
+  echo -e "     -> falls aktiv: Regel für Port 5000/tcp (eingehend) hinzufügen, oder Firewall für diese CT deaktivieren."
+  echo -e "  2) Läuft der Dienst gerade wirklich?"
+  echo -e "     pct exec ${CTID} -- systemctl status quotebox"
+  echo -e "     pct exec ${CTID} -- journalctl -u quotebox -n 60 --no-pager"
+  echo -e "  3) Lauscht der Port korrekt auf 0.0.0.0?"
+  echo -e "     pct exec ${CTID} -- ss -tlnp"
+  echo -e "  4) Direkt vom Host aus testen:"
+  echo -e "     curl -v http://${IP}:5000/health"
+else
+  msg_ok "Von außen erreichbar"
+fi
+
 msg_ok "Fertig eingerichtet!\n"
 echo -e "${CREATING}${GN}${APP} wurde erfolgreich installiert!${CL}"
 echo -e "${INFO}${YW} Anzeige fürs Tablet (Kiosk/Vollbild):${CL}"

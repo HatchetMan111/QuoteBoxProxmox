@@ -68,6 +68,21 @@ if [[ "$HEALTH_OK" -ne 1 ]]; then
 fi
 msg_ok "Web-UI antwortet"
 
+msg_info "Prüfe Bind-Adresse (muss 0.0.0.0:5000 sein, nicht nur 127.0.0.1)"
+$STD apt-get install -y iproute2
+BIND_LINE=$(ss -tlnp 2>/dev/null | grep ":5000 " || true)
+if [[ -z "$BIND_LINE" ]]; then
+  msg_error "Kein Listener auf Port 5000 gefunden! Vollständige 'ss -tlnp'-Ausgabe:"
+  ss -tlnp || true
+  exit 1
+fi
+if echo "$BIND_LINE" | grep -q "127.0.0.1:5000"; then
+  msg_error "Dienst lauscht nur auf 127.0.0.1 -> von außerhalb des Containers NICHT erreichbar!"
+  echo "$BIND_LINE"
+  exit 1
+fi
+msg_ok "Dienst lauscht korrekt: $(echo "$BIND_LINE" | awk '{print $4}')"
+
 motd_ssh
 customize
 
