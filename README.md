@@ -29,7 +29,7 @@ Die App läuft als eigener Systembenutzer `quotebox` (kein Root). Bei Erfolg zei
 ## Tablet einrichten
 
 1. Browser auf dem Tablet öffnen, `http://<LXC-IP>:5000/display` aufrufen.
-2. Als Startseite/Lesezeichen speichern bzw. den Browser im Kiosk-/Vollbildmodus starten (z. B. Chrome mit `--kiosk http://<LXC-IP>:5000/display`, oder eine Kiosk-Browser-App aus dem jeweiligen App-Store, falls das Tablet-OS das nicht nativ unterstützt). Die Seite setzt `mobile-web-app-capable`/`apple-mobile-web-app-capable`, lässt sich also auch "zum Startbildschirm hinzufügen" und öffnet dann ohne Browser-Leiste.
+2. **Vollbild:** Über den Expand-Button unten rechts wird die Adresszeile ausgeblendet (Android/Chrome, Fullscreen-API). Auf iOS Safari gibt es das nicht – dort die Seite stattdessen über **„Zum Home-Bildschirm hinzufügen"** öffnen, sie startet dann ohne Adresszeile (die Seite setzt die passenden Meta-Tags). Alternativ den Browser im Kiosk-Modus starten (z. B. Chrome mit `--kiosk http://<LXC-IP>:5000/display`).
 3. Bildschirm-Standby deaktivieren bzw. auf "nie" stellen, damit die Anzeige dauerhaft läuft.
 
 ## Update

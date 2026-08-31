@@ -110,6 +110,23 @@
     nextQuote();
   }
 
+  function isFullscreen() {
+    return !!(document.fullscreenElement || document.webkitFullscreenElement);
+  }
+
+  async function toggleFullscreen() {
+    const el = document.documentElement;
+    try {
+      if (isFullscreen()) {
+        (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+      } else {
+        (el.requestFullscreen || el.webkitRequestFullscreen).call(el);
+      }
+    } catch (e) {
+      // Manche Browser lehnen Vollbild ohne Nutzer-Geste oder komplett ab.
+    }
+  }
+
   (async function init() {
     await refreshSettings();
     settingsJson = JSON.stringify(settings);
@@ -127,6 +144,16 @@
         manualAdvance();
       }
     });
+    // Vollbild-Button: Adresszeile ausblenden (Android/Chrome; iOS kann das
+    // nur ueber "Zum Home-Bildschirm hinzufuegen" -> Button wird dort ausgeblendet).
+    const fsBtn = document.getElementById("fullscreen-btn");
+    if (fsBtn) {
+      if (document.fullscreenEnabled || document.webkitFullscreenEnabled) {
+        fsBtn.addEventListener("click", toggleFullscreen);
+      } else {
+        fsBtn.style.display = "none";
+      }
+    }
     // Falls in /settings etwas geaendert wurde: Periodisch pruefen, aber nur
     // reagieren, wenn sich wirklich etwas geaendert hat.
     setInterval(refreshSettings, 30000);
