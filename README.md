@@ -67,6 +67,16 @@ pct exec <CTID> -- journalctl -u quotebox -n 100 --no-pager
 pct exec <CTID> -- curl -v http://127.0.0.1:5000/health
 ```
 
+Antwortet `http://<CT-IP>:5000/health` vom Host aus mit **404** (statt Timeout), lauscht dort ein *anderer* Dienst – typischerweise ein IP-Konflikt (z. B. ein NAS; Synology DSM nutzt ebenfalls Port 5000). Das Install-Skript prüft das inzwischen selbst (MAC-Abgleich per ARP, Server-Header) und meldet den Konflikt direkt. Manuell:
+
+```bash
+pct exec <CTID> -- hostname -I          # IP, die der CT selbst meldet
+ip neigh show <CT-IP>                   # auf dem Host: MAC hinter der IP (mit pct config <CTID> vergleichen)
+curl --noproxy '*' -i http://<CT-IP>:5000/health   # Server-Header der Antwort ansehen
+```
+
+Lösung: dem CT eine feste, freie IP geben (`pct set <CTID> --net0 name=eth0,bridge=vmbr0,ip=<freie-IP>/24,gw=<Router-IP>`) oder im Router eine DHCP-Reservierung setzen.
+
 ## Lokaler Test ohne Proxmox
 
 ```bash

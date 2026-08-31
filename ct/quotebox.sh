@@ -110,27 +110,75 @@ build_container
 description
 
 msg_info "Prüfe Erreichbarkeit von außen (vom Proxmox-Host aus)"
+HEALTH_URL="http://${IP}:5000/health"
+HTTP_CODE=""
+CURL_RC=0
 EXTERNAL_OK=0
-for i in $(seq 1 10); do
-  if curl -fsS -m 3 "http://${IP}:5000/health" >/dev/null 2>&1; then
+for _ in 1 2 3 4 5; do
+  # --noproxy: ein auf dem Host gesetzter http_proxy wuerde LAN-Requests verfaelschen
+  HTTP_CODE="$(curl --noproxy '*' -s -m 5 -o /tmp/quotebox-health.out -w '%{http_code}' "$HEALTH_URL" 2>/dev/null)"
+  CURL_RC=$?
+  if [[ "$HTTP_CODE" == "200" ]]; then
     EXTERNAL_OK=1
     break
   fi
-  sleep 1
+  sleep 2
 done
 
 if [[ "$EXTERNAL_OK" -ne 1 ]]; then
-  msg_error "http://${IP}:5000/health antwortet NICHT vom Host aus (Container selbst meldete beim Setup Erfolg)."
-  echo -e "${YW}Das ist so gut wie immer eine Firewall/Netzwerk-Frage, keine App-Frage. Prüfe der Reihe nach:${CL}"
-  echo -e "  1) Proxmox-Firewall aktiv? Datacenter -> Firewall / Node -> Firewall / CT ${CTID} -> Firewall"
-  echo -e "     -> falls aktiv: Regel für Port 5000/tcp (eingehend) hinzufügen, oder Firewall für diese CT deaktivieren."
-  echo -e "  2) Läuft der Dienst gerade wirklich?"
-  echo -e "     pct exec ${CTID} -- systemctl status quotebox"
-  echo -e "     pct exec ${CTID} -- journalctl -u quotebox -n 60 --no-pager"
-  echo -e "  3) Lauscht der Port korrekt auf 0.0.0.0?"
-  echo -e "     pct exec ${CTID} -- ss -tlnp"
-  echo -e "  4) Direkt vom Host aus testen:"
-  echo -e "     curl -v http://${IP}:5000/health"
+  msg_error "${HEALTH_URL} antwortet nicht wie erwartet (HTTP: ${HTTP_CODE:-keiner}, curl-rc: ${CURL_RC:-?})."
+  echo -e "${YW}Automatische Diagnose:${CL}"
+
+  # 1) Gehoert die IP ueberhaupt noch zu diesem CT?
+  CT_IP="$(pct exec "$CTID" -- hostname -I 2>/dev/null | awk '{print $1}')"
+  if [[ -n "$CT_IP" && "$CT_IP" != "${IP:-}" ]]; then
+    echo -e "  ⚠️  IP geändert: CT meldet jetzt ${BGN}${CT_IP}${YW} (geprüft wurde ${IP})."
+    echo -e "     -> Richtige URL: ${BGN}http://${CT_IP}:5000/display${CL}"
+  fi
+
+  # 2) IP-Konflikt? ARP-MAC des Hosts mit der CT-MAC vergleichen
+  CT_MAC="$(pct config "$CTID" 2>/dev/null | grep -oE 'hwaddr=[0-9A-Fa-f:]+' | head -1 | cut -d= -f2 | tr '[:upper:]' '[:lower:]')"
+  ARP_MAC="$(ip neigh show "${IP:-}" 2>/dev/null | awk '{print $5}' | head -1 | tr '[:upper:]' '[:lower:]')"
+  if [[ -n "$CT_MAC" && -n "$ARP_MAC" && "$CT_MAC" != "$ARP_MAC" ]]; then
+    echo -e "  ⚠️  IP-KONFLIKT: Unter ${IP} antwortet MAC ${ARP_MAC}, der CT hat aber ${CT_MAC}."
+    echo -e "     -> Ein anderes Gerät (z. B. NAS) belegt diese IP! CT auf feste freie IP umstellen"
+    echo -e "        oder im Router per DHCP-Reservierung fest zuordnen."
+  elif [[ -n "${HTTP_CODE:-}" && "$HTTP_CODE" != "000" && -z "$ARP_MAC" ]]; then
+    echo -e "  ⚠️  Antwort kam nicht direkt vom Gerät (kein ARP-Eintrag für ${IP})."
+    echo -e "     -> Prüfe, ob der Host einen Proxy erzwingt: env | grep -i proxy"
+  fi
+
+  # 3) Was genau hat geantwortet?
+  if [[ -n "${HTTP_CODE:-}" && "$HTTP_CODE" != "000" ]]; then
+    SERVER_LINE="$(curl --noproxy '*' -s -m 5 -D - -o /dev/null "$HEALTH_URL" 2>/dev/null | tr -d '\r' | grep -iE '^(server|x-powered-by):' | head -2 || true)"
+    BODY_HEAD="$(head -c 100 /tmp/quotebox-health.out 2>/dev/null | tr '\n' ' ' | tr -s ' ')"
+    echo -e "  ⚠️  Port 5000 antwortet mit HTTP ${HTTP_CODE}, aber NICHT mit QuoteBox. ${SERVER_LINE:-${BODY_HEAD:+Antwort: ${BODY_HEAD}}}"
+    echo -e "     -> Typisch für einen anderen Dienst auf derselben IP (Konflikt, siehe oben)."
+    echo -e "     -> Vergleich direkt im CT: pct exec ${CTID} -- curl -s http://127.0.0.1:5000/health"
+  else
+    case "${CURL_RC:-0}" in
+      7)
+        echo -e "  ⚠️  Verbindung abgelehnt – im CT lauscht gerade nichts auf Port 5000."
+        echo -e "     pct exec ${CTID} -- systemctl status quotebox"
+        echo -e "     pct exec ${CTID} -- journalctl -u quotebox -n 60 --no-pager"
+        echo -e "     pct exec ${CTID} -- ss -tlnp"
+        ;;
+      28)
+        echo -e "  ⚠️  Zeitüberschreitung – typisch für eine blockierende Firewall."
+        echo -e "     Prüfe Datacenter -> Firewall / Node -> Firewall / CT ${CTID} -> Firewall"
+        echo -e "     -> falls aktiv: Regel für Port 5000/tcp (eingehend) hinzufügen, oder Firewall für diese CT deaktivieren."
+        ;;
+      *)
+        echo -e "  ⚠️  Kein HTTP erreichbar. Der Reihe nach:"
+        echo -e "     pct exec ${CTID} -- systemctl status quotebox"
+        echo -e "     pct exec ${CTID} -- journalctl -u quotebox -n 60 --no-pager"
+        echo -e "     pct exec ${CTID} -- ss -tlnp"
+        echo -e "     curl -v ${HEALTH_URL}"
+        ;;
+    esac
+  fi
+
+  echo -e "${YW}Hinweis: Die URLs unten sind aktuell evtl. nicht erreichbar – siehe Diagnose oben.${CL}"
 else
   msg_ok "Von außen erreichbar"
 fi
