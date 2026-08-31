@@ -43,6 +43,10 @@ DEFAULT_SETTINGS = {
     "interval_seconds": 20,
     "theme": "dark",
     "show_clock": False,
+    "night_enabled": False,
+    "night_mode": "dim",  # "dim" = abgedunkelt, "black" = schwarz (Einbrennschutz)
+    "night_start": 23,    # Stunde 0-23
+    "night_end": 7,
 }
 
 _lock = threading.Lock()
@@ -186,6 +190,19 @@ async def api_set_settings(request: Request) -> JSONResponse:
     show_clock = body.get("show_clock")
     if isinstance(show_clock, bool):
         current["show_clock"] = show_clock
+
+    night_enabled = body.get("night_enabled")
+    if isinstance(night_enabled, bool):
+        current["night_enabled"] = night_enabled
+
+    night_mode = body.get("night_mode")
+    if night_mode in ("dim", "black"):
+        current["night_mode"] = night_mode
+
+    for key in ("night_start", "night_end"):
+        val = body.get(key)
+        if isinstance(val, int) and not isinstance(val, bool) and 0 <= val <= 23:
+            current[key] = val
 
     if not current["active_categories"]:
         current["active_categories"] = list(CATEGORIES.keys())

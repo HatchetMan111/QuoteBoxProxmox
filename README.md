@@ -4,8 +4,12 @@ Lokale Sprüche-Anzeige für ein altes Tablet als Wand-Eye-Catcher. Läuft als L
 
 Kategorien: **Stoisch**, **Kalendersprüche**, **Motivation**, **Zen**, **Humor** und **Zufall** (würfelt über alle Kategorien) – jeweils mit passendem Icon, in den Einstellungen frei kombinierbar.
 
-- `http://<LXC-IP>:5000/display` – Vollbild-Ansicht fürs Tablet. **Tipp auf die Plakette** (oder Leertaste/Pfeil-rechts) holt sofort den nächsten Spruch.
-- `http://<LXC-IP>:5000/settings` – Kategorien, Wechselintervall, Hell/Dunkel, Uhrzeit an/aus. Ungespeicherte Änderungen werden angezeigt und beim Verlassen gemeldet; mindestens eine Kategorie bleibt immer aktiv. Die Anzeige-Seite übernimmt Änderungen automatisch (spätestens ~30 s, sofort beim Zurückwechseln auf den Tab).
+- `http://<LXC-IP>:5000/display` – Vollbild-Ansicht fürs Tablet. **Tipp auf die Plakette** (oder Leertaste/Pfeil-rechts) holt sofort den nächsten Spruch. Über den Expand-Button unten rechts lässt sich der Browser-Vollbildmodus aktivieren.
+- `http://<LXC-IP>:5000/settings` – Kategorien, Wechselintervall, Hell/Dunkel, Uhrzeit, **Nachtabsenkung**. Ungespeicherte Änderungen werden angezeigt und beim Verlassen gemeldet; mindestens eine Kategorie bleibt immer aktiv. Die Anzeige-Seite übernimmt Änderungen automatisch (spätestens ~30 s, sofort beim Zurückwechseln auf den Tab).
+
+**Nachtabsenkung (Einbrennschutz):** In einem Zeitfenster (z. B. 23:00–07:00, überschreitet problemlos Mitternacht) wird die Anzeige entweder **abgedunkelt** oder komplett **auf Schwarz** geschaltet – schont den alten Tablet-Bildschirm und spart Strom. Der Browser kann die Hintergrundbeleuchtung des Geräts nicht steuern; echtes Dimmen der Helligkeit macht daher das Tablet-OS.
+
+**Kiosk ohne extra App (PWA):** Die Seite ist eine installierbare Web-App. In Chrome (Android): Menü → **„Zum Startbildschirm hinzufügen/App installieren"**. Auf iOS: Teilen → **„Zum Home-Bildschirm"**. Gestartet über das Icon öffnet sich `/display` **ohne Adresszeile** im echten Kiosk-Modus.
 
 ## Installation (Proxmox-Host-Shell)
 

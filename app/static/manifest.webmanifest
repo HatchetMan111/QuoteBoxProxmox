@@ -1,0 +1,17 @@
+{
+  "name": "QuoteBox",
+  "short_name": "QuoteBox",
+  "description": "Lokale Sprüche-Anzeige fürs Wand-Tablet",
+  "start_url": "/display",
+  "scope": "/",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone"],
+  "orientation": "any",
+  "background_color": "#14120f",
+  "theme_color": "#14120f",
+  "icons": [
+    { "src": "/static/pwa-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/static/pwa-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/static/pwa-icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

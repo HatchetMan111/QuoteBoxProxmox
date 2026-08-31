@@ -6,6 +6,8 @@
   <meta name="theme-color" content="#14120f">
   <title>QuoteBox – Einstellungen</title>
   <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/static/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
   <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
@@ -49,6 +51,30 @@
               <input type="checkbox" id="show-clock">
               <span class="track"><span class="thumb"></span></span>
             </label>
+          </div>
+        </div>
+
+        <div class="field-group">
+          <span class="field-label">Nachtabsenkung</span>
+          <div class="toggle-row">
+            <span class="field-label inline">Nachts dimmen bzw. abschalten (Einbrennschutz)</span>
+            <label class="switch">
+              <input type="checkbox" id="night-enabled">
+              <span class="track"><span class="thumb"></span></span>
+            </label>
+          </div>
+          <div class="night-details" id="night-details">
+            <div class="theme-choice night-mode-choice">
+              <button type="button" id="night-dim" data-mode="dim">Dimmen</button>
+              <button type="button" id="night-black" data-mode="black">Schwarz</button>
+            </div>
+            <div class="night-times">
+              <label for="night-start">Von</label>
+              <select id="night-start"></select>
+              <label for="night-end">Bis</label>
+              <select id="night-end"></select>
+              <span class="night-note">Uhr</span>
+            </div>
           </div>
         </div>
 

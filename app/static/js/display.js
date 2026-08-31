@@ -42,6 +42,21 @@
     clock.classList.toggle("visible", !!settings.show_clock);
   }
 
+  function isNightNow() {
+    if (!settings.night_enabled) return false;
+    const s = settings.night_start, e = settings.night_end;
+    if (s === e) return false; // leerer Zeitraum
+    const h = new Date().getHours();
+    // 23 -> 7 ueberschreitet Mitternacht
+    return s > e ? (h >= s || h < e) : (h >= s && h < e);
+  }
+
+  function applyNight() {
+    const night = isNightNow();
+    document.body.classList.toggle("night-dim", night && settings.night_mode === "dim");
+    document.body.classList.toggle("night-black", night && settings.night_mode === "black");
+  }
+
   function tickClock() {
     if (!settings.show_clock) return;
     const now = new Date();
@@ -98,6 +113,7 @@
       if (!changed) return;
       applyTheme();
       updateClockVisibility();
+      applyNight();
       if (intervalChanged) scheduleRotation();
       if (categoriesChanged) nextQuote();
     } catch (e) {
@@ -132,6 +148,7 @@
     settingsJson = JSON.stringify(settings);
     applyTheme();
     updateClockVisibility();
+    applyNight();
     tickClock();
     setInterval(tickClock, 1000);
     await nextQuote();
@@ -156,12 +173,15 @@
     }
     // Falls in /settings etwas geaendert wurde: Periodisch pruefen, aber nur
     // reagieren, wenn sich wirklich etwas geaendert hat.
+    applyNight();
+    setInterval(applyNight, 30000); // Zeitfenster-Grenzen uebergangslos treffen
     setInterval(refreshSettings, 30000);
     // Tablet-Browser drosseln Timer im Hintergrund -> beim Ruecksprung auf die
     // Anzeige sofort synchronisieren (Uhr + Einstellungen + ggf. neuer Spruch).
     document.addEventListener("visibilitychange", () => {
       if (!document.hidden) {
         tickClock();
+        applyNight();
         refreshSettings();
       }
     });

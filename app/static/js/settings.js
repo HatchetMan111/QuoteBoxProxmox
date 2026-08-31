@@ -6,6 +6,12 @@
   const themeDarkBtn = document.getElementById("theme-dark");
   const themeLightBtn = document.getElementById("theme-light");
   const showClockInput = document.getElementById("show-clock");
+  const nightEnabled = document.getElementById("night-enabled");
+  const nightDimBtn = document.getElementById("night-dim");
+  const nightBlackBtn = document.getElementById("night-black");
+  const nightStartSel = document.getElementById("night-start");
+  const nightEndSel = document.getElementById("night-end");
+  const nightDetails = document.getElementById("night-details");
   const saveBtn = document.getElementById("save-btn");
   const saveStatus = document.getElementById("save-status");
   const loadError = document.getElementById("load-error");
@@ -63,6 +69,34 @@
     const svg = await res.text();
     iconCache.set(name, svg);
     return svg;
+  }
+
+  function setNightMode(mode) {
+    state.night_mode = mode;
+    nightDimBtn.classList.toggle("active", mode === "dim");
+    nightDimBtn.setAttribute("aria-pressed", mode === "dim");
+    nightBlackBtn.classList.toggle("active", mode === "black");
+    nightBlackBtn.setAttribute("aria-pressed", mode === "black");
+  }
+
+  function fillHourSelect(sel, selected) {
+    sel.innerHTML = "";
+    for (let h = 0; h < 24; h++) {
+      const opt = document.createElement("option");
+      opt.value = h;
+      opt.textContent = `${String(h).padStart(2, "0")}:00`;
+      if (h === selected) opt.selected = true;
+      sel.appendChild(opt);
+    }
+  }
+
+  function updateNightUiEnabled() {
+    const on = !!state.night_enabled;
+    nightDetails.classList.toggle("disabled", !on);
+    nightDimBtn.disabled = !on;
+    nightBlackBtn.disabled = !on;
+    nightStartSel.disabled = !on;
+    nightEndSel.disabled = !on;
   }
 
   function renderCategoryGrid() {
@@ -126,6 +160,11 @@
     intervalValue.textContent = formatInterval(state.interval_seconds);
     setTheme(state.theme);
     showClockInput.checked = !!state.show_clock;
+    nightEnabled.checked = !!state.night_enabled;
+    setNightMode(state.night_mode || "dim");
+    fillHourSelect(nightStartSel, state.night_start);
+    fillHourSelect(nightEndSel, state.night_end);
+    updateNightUiEnabled();
     snapshot();
   }
 
@@ -143,6 +182,25 @@
     markDirty();
   });
 
+  nightEnabled.addEventListener("change", () => {
+    state.night_enabled = nightEnabled.checked;
+    updateNightUiEnabled();
+    markDirty();
+  });
+
+  nightDimBtn.addEventListener("click", () => { setNightMode("dim"); markDirty(); });
+  nightBlackBtn.addEventListener("click", () => { setNightMode("black"); markDirty(); });
+
+  nightStartSel.addEventListener("change", () => {
+    state.night_start = parseInt(nightStartSel.value, 10);
+    markDirty();
+  });
+
+  nightEndSel.addEventListener("change", () => {
+    state.night_end = parseInt(nightEndSel.value, 10);
+    markDirty();
+  });
+
   saveBtn.addEventListener("click", async () => {
     saveBtn.disabled = true;
     try {
@@ -154,6 +212,10 @@
           interval_seconds: state.interval_seconds,
           theme: state.theme,
           show_clock: state.show_clock,
+          night_enabled: state.night_enabled,
+          night_mode: state.night_mode,
+          night_start: state.night_start,
+          night_end: state.night_end,
         }),
       });
       state = saved;
