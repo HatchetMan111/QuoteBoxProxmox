@@ -107,6 +107,25 @@ function update_script() {
 
 start
 build_container
+
+# build.func lädt das In-Container-Install-Skript ausschließlich aus dem
+# community-scripts-Repo (dort existiert quotebox-install.sh nicht -> stiller
+# No-Op). Deshalb installieren wir hier explizit aus unserem eigenen Repo
+# (idempotent, mit hartem Abbruch bei Fehlern).
+msg_info "Installiere ${APP} im Container"
+if pct exec "$CTID" -- test -f /etc/systemd/system/quotebox.service 2>/dev/null; then
+  msg_ok "${APP} ist bereits installiert"
+else
+  if ! pct exec "$CTID" -- bash -c 'curl -fsSL https://raw.githubusercontent.com/HatchetMan111/QuoteBoxProxmox/main/install/quotebox-install.sh -o /tmp/quotebox-install.sh && [[ -s /tmp/quotebox-install.sh ]] && bash /tmp/quotebox-install.sh'; then
+    msg_error "Die Installation im Container ist fehlgeschlagen – Setup abgebrochen."
+    echo -e "${YW}Details:${CL}"
+    echo -e "  pct exec ${CTID} -- systemctl status quotebox"
+    echo -e "  pct exec ${CTID} -- journalctl -u quotebox -n 60 --no-pager"
+    exit 1
+  fi
+  msg_ok "${APP} im Container installiert"
+fi
+
 description
 
 msg_info "Prüfe Erreichbarkeit von außen (vom Proxmox-Host aus)"
@@ -178,14 +197,17 @@ if [[ "$EXTERNAL_OK" -ne 1 ]]; then
     esac
   fi
 
-  echo -e "${YW}Hinweis: Die URLs unten sind aktuell evtl. nicht erreichbar – siehe Diagnose oben.${CL}"
 else
   msg_ok "Von außen erreichbar"
 fi
 
-msg_ok "Fertig eingerichtet!\n"
-echo -e "${CREATING}${GN}${APP} wurde erfolgreich installiert!${CL}"
-echo -e "${INFO}${YW} Anzeige fürs Tablet (Kiosk/Vollbild):${CL}"
-echo -e "${TAB}${GATEWAY}${BGN}http://${IP}:5000/display${CL}"
-echo -e "${INFO}${YW} Einstellungen (Kategorien, Intervall, Uhr):${CL}"
-echo -e "${TAB}${GATEWAY}${BGN}http://${IP}:5000/settings${CL}"
+if [[ "$EXTERNAL_OK" -eq 1 ]]; then
+  msg_ok "Fertig eingerichtet!\n"
+  echo -e "${CREATING}${GN}${APP} wurde erfolgreich installiert!${CL}"
+  echo -e "${INFO}${YW} Anzeige fürs Tablet (Kiosk/Vollbild):${CL}"
+  echo -e "${TAB}${GATEWAY}${BGN}http://${IP}:5000/display${CL}"
+  echo -e "${INFO}${YW} Einstellungen (Kategorien, Intervall, Uhr):${CL}"
+  echo -e "${TAB}${GATEWAY}${BGN}http://${IP}:5000/settings${CL}"
+else
+  msg_error "Setup NICHT abgeschlossen – bitte Diagnose oben beheben."
+fi

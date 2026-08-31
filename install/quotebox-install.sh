@@ -4,7 +4,23 @@
 # License: MIT
 # Source: https://github.com/HatchetMan111/QuoteBoxProxmox
 
+# FUNCTIONS_FILE_PATH setzt der community-scripts-Ablauf auf dem Host (export).
+# Beim eigenständigen Aufruf (ct/quotebox.sh ruft dieses Skript direkt im
+# Container auf) laden wir die Funktionen hier selbst nach.
+if [[ -z "${FUNCTIONS_FILE_PATH:-}" ]]; then
+  FUNCTIONS_FILE_PATH="$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/install.func)"
+fi
+if [[ -z "$FUNCTIONS_FILE_PATH" ]]; then
+  echo "FEHLER: Install-Funktionen (install.func) konnten nicht geladen werden." >&2
+  exit 1
+fi
 source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
+
+if ! declare -F msg_info >/dev/null 2>&1; then
+  echo "FEHLER: Install-Funktionen unvollständig (msg_info fehlt)." >&2
+  exit 1
+fi
+
 color
 verb_ip6
 catch_errors
