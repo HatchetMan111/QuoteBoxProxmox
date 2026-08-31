@@ -129,6 +129,14 @@
     });
     // Falls in /settings etwas geaendert wurde: Periodisch pruefen, aber nur
     // reagieren, wenn sich wirklich etwas geaendert hat.
-    setInterval(refreshSettings, 60000);
+    setInterval(refreshSettings, 30000);
+    // Tablet-Browser drosseln Timer im Hintergrund -> beim Ruecksprung auf die
+    // Anzeige sofort synchronisieren (Uhr + Einstellungen + ggf. neuer Spruch).
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        tickClock();
+        refreshSettings();
+      }
+    });
   })();
 })();

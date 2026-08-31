@@ -2,21 +2,21 @@
 
 Lokale Sprüche-Anzeige für ein altes Tablet als Wand-Eye-Catcher. Läuft als LXC-Container auf Proxmox, komplett lokal (kein Cloud-Dienst nötig).
 
-Kategorien: **Stoisch**, **Kalendersprüche**, **Motivation**, **Zen**, **Humor** – jeweils mit passendem Icon, in den Einstellungen frei kombinierbar.
+Kategorien: **Stoisch**, **Kalendersprüche**, **Motivation**, **Zen**, **Humor** und **Zufall** (würfelt über alle Kategorien) – jeweils mit passendem Icon, in den Einstellungen frei kombinierbar.
 
 - `http://<LXC-IP>:5000/display` – Vollbild-Ansicht fürs Tablet. **Tipp auf die Plakette** (oder Leertaste/Pfeil-rechts) holt sofort den nächsten Spruch.
-- `http://<LXC-IP>:5000/settings` – Kategorien, Wechselintervall, Hell/Dunkel, Uhrzeit an/aus. Ungespeicherte Änderungen werden angezeigt; mindestens eine Kategorie bleibt immer aktiv.
+- `http://<LXC-IP>:5000/settings` – Kategorien, Wechselintervall, Hell/Dunkel, Uhrzeit an/aus. Ungespeicherte Änderungen werden angezeigt und beim Verlassen gemeldet; mindestens eine Kategorie bleibt immer aktiv. Die Anzeige-Seite übernimmt Änderungen automatisch (spätestens ~30 s, sofort beim Zurückwechseln auf den Tab).
 
 ## Installation (Proxmox-Host-Shell)
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/QuoteBoxProxmox/main/ct/quotebox.sh)"
+bash -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/HatchetMan111/QuoteBoxProxmox@main/ct/quotebox.sh)"
 ```
 
-Falls raw.githubusercontent.com mal nicht antwortet (z. B. HTTP 400), läuft derselbe Aufruf über das jsDelivr-CDN:
+Alternativ direkt von GitHub (falls jsDelivr mal nicht erreichbar oder veraltet ist):
 
 ```bash
-bash -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/HatchetMan111/QuoteBoxProxmox@main/ct/quotebox.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/QuoteBoxProxmox/main/ct/quotebox.sh)"
 ```
 
 Das Skript fragt CT-ID, Ressourcen etc. ab (Standard: 1 vCPU, 512 MB RAM, 4 GB Disk, Debian 12, unprivilegiert), baut den Container, installiert die App darin und prüft am Ende selbst:

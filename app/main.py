@@ -28,12 +28,14 @@ SETTINGS_FILE = DATA_DIR / "settings.json"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 # Kategorie-Metadaten: Label, Icon-Datei, Akzentfarbe (fuer die Plakette)
+# "random" ist eine virtuelle Kategorie: aktiv = Sprüche aus ALLEN Kategorien.
 CATEGORIES: dict[str, dict[str, str]] = {
     "stoic": {"label": "Stoisch", "icon": "stoic.svg", "accent": "#b08d57"},
     "calendar": {"label": "Kalendersprüche", "icon": "calendar.svg", "accent": "#5b7c99"},
     "motivation": {"label": "Motivation", "icon": "motivation.svg", "accent": "#c1622d"},
     "zen": {"label": "Zen", "icon": "zen.svg", "accent": "#6b8e6b"},
     "humor": {"label": "Humor", "icon": "humor.svg", "accent": "#d4a73b"},
+    "random": {"label": "Zufall", "icon": "random.svg", "accent": "#8a7fb0"},
 }
 
 DEFAULT_SETTINGS = {
@@ -197,7 +199,10 @@ def api_quote() -> JSONResponse:
     global _last_quote_key
     settings = load_settings()
     active = [c for c in settings["active_categories"] if c in CATEGORIES]
-    quotes = [q for q in load_quotes() if q.get("category") in active] if active else load_quotes()
+    if "random" in active:
+        quotes = load_quotes()
+    else:
+        quotes = [q for q in load_quotes() if q.get("category") in active] if active else load_quotes()
     if not quotes:
         quotes = load_quotes()
     if not quotes:

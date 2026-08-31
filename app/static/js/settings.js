@@ -103,13 +103,18 @@
     });
   }
 
-  async function init() {
+  async function init(attempt = 0) {
     loadError.hidden = true;
     try {
       const [cats, cfg] = await Promise.all([fetchJSON("/api/categories"), fetchJSON("/api/settings")]);
       categories = cats;
       state = cfg;
     } catch (e) {
+      // Kurze Netzwerk-/Start-Schwankungen automatisch abfangen, bevor wir aufgeben.
+      if (attempt < 2) {
+        setTimeout(() => init(attempt + 1), 1500);
+        return;
+      }
       settingsForm.hidden = true;
       loadError.hidden = false;
       return;
@@ -164,5 +169,19 @@
   });
 
   retryBtn.addEventListener("click", init);
+
+  // Ungespeicherte Änderungen nicht stillschweigend verlieren.
+  document.querySelector(".back-link").addEventListener("click", (e) => {
+    if (dirty && !window.confirm("Es gibt ungespeicherte Änderungen. Verwerfen?")) {
+      e.preventDefault();
+    }
+  });
+  window.addEventListener("beforeunload", (e) => {
+    if (dirty) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+  });
+
   init();
 })();
