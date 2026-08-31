@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func)
+# build.func laden – mit jsDelivr-Fallback, falls raw.githubusercontent.com zickt (z. B. HTTP 400)
+source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func \
+  || curl -fsSL https://cdn.jsdelivr.net/gh/community-scripts/ProxmoxVE@main/misc/build.func)
 # Copyright (c) 2021-2026 community-scripts ORG (Vorlage) / angepasst für QuoteBox
 # Author: HatchetMan111
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
@@ -116,7 +118,7 @@ msg_info "Installiere ${APP} im Container"
 if pct exec "$CTID" -- test -f /etc/systemd/system/quotebox.service 2>/dev/null; then
   msg_ok "${APP} ist bereits installiert"
 else
-  if ! pct exec "$CTID" -- bash -c 'curl -fsSL https://raw.githubusercontent.com/HatchetMan111/QuoteBoxProxmox/main/install/quotebox-install.sh -o /tmp/quotebox-install.sh && [[ -s /tmp/quotebox-install.sh ]] && bash /tmp/quotebox-install.sh'; then
+  if ! pct exec "$CTID" -- bash -c 'rm -f /tmp/quotebox-install.sh; for u in https://raw.githubusercontent.com/HatchetMan111/QuoteBoxProxmox/main/install/quotebox-install.sh https://cdn.jsdelivr.net/gh/HatchetMan111/QuoteBoxProxmox@main/install/quotebox-install.sh; do curl -fsSL "$u" -o /tmp/quotebox-install.sh && break; done; [[ -s /tmp/quotebox-install.sh ]] && bash /tmp/quotebox-install.sh'; then
     msg_error "Die Installation im Container ist fehlgeschlagen – Setup abgebrochen."
     echo -e "${YW}Details:${CL}"
     echo -e "  pct exec ${CTID} -- systemctl status quotebox"

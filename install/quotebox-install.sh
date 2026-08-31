@@ -8,7 +8,9 @@
 # Beim eigenständigen Aufruf (ct/quotebox.sh ruft dieses Skript direkt im
 # Container auf) laden wir die Funktionen hier selbst nach.
 if [[ -z "${FUNCTIONS_FILE_PATH:-}" ]]; then
-  FUNCTIONS_FILE_PATH="$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/install.func)"
+  # jsDelivr-Fallback, falls raw.githubusercontent.com nicht antwortet
+  FUNCTIONS_FILE_PATH="$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/install.func \
+    || curl -fsSL https://cdn.jsdelivr.net/gh/community-scripts/ProxmoxVE@main/misc/install.func)"
 fi
 if [[ -z "$FUNCTIONS_FILE_PATH" ]]; then
   echo "FEHLER: Install-Funktionen (install.func) konnten nicht geladen werden." >&2

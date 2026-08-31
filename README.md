@@ -13,6 +13,12 @@ Kategorien: **Stoisch**, **Kalendersprüche**, **Motivation**, **Zen**, **Humor*
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/QuoteBoxProxmox/main/ct/quotebox.sh)"
 ```
 
+Falls raw.githubusercontent.com mal nicht antwortet (z. B. HTTP 400), läuft derselbe Aufruf über das jsDelivr-CDN:
+
+```bash
+bash -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/HatchetMan111/QuoteBoxProxmox@main/ct/quotebox.sh)"
+```
+
 Das Skript fragt CT-ID, Ressourcen etc. ab (Standard: 1 vCPU, 512 MB RAM, 4 GB Disk, Debian 12, unprivilegiert), baut den Container, installiert die App darin und prüft am Ende selbst:
 
 - `systemctl is-active quotebox`
