@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Copyright (c) 2021-2026 community-scripts ORG (Vorlage) / angepasst für QuoteBox
-# Author: DEIN-NAME
+# Author: HatchetMan111
 # License: MIT
 # Source: https://github.com/HatchetMan111/QuoteBoxProxmox
 
@@ -12,28 +12,41 @@ setting_up_container
 network_check
 update_os
 
-# WICHTIG: nach dem Push in dein eigenes Repo hier die echte URL eintragen.
 REPO_URL="https://github.com/HatchetMan111/QuoteBoxProxmox.git"
 
 msg_info "Installiere Abhängigkeiten"
-$STD apt-get install -y python3 python3-venv python3-pip git
+$STD apt-get install -y python3 python3-venv python3-pip git iproute2
 msg_ok "Abhängigkeiten installiert"
+
+msg_info "Lege Dienstbenutzer 'quotebox' an"
+if ! id -u quotebox >/dev/null 2>&1; then
+  useradd --system --home-dir /opt/quotebox --shell /usr/sbin/nologin quotebox
+fi
+msg_ok "Dienstbenutzer angelegt"
 
 msg_info "Lade QuoteBox-Anwendung"
 mkdir -p /opt/quotebox
 git clone -q --depth 1 "$REPO_URL" /opt/quotebox-src
+if [[ ! -d /opt/quotebox-src/app ]]; then
+  msg_error "Repo-Struktur unerwartet (app/ fehlt) – Installation abgebrochen."
+  rm -rf /opt/quotebox-src
+  exit 1
+fi
 cp -r /opt/quotebox-src/app /opt/quotebox/app
 cp /opt/quotebox-src/quotebox.service /etc/systemd/system/quotebox.service
-cd /opt/quotebox-src && git rev-parse HEAD > /opt/quotebox_version.txt
-cd /
+git -C /opt/quotebox-src rev-parse HEAD > /opt/quotebox_version.txt
 rm -rf /opt/quotebox-src
 msg_ok "QuoteBox-Anwendung geladen"
 
 msg_info "Erstelle Python-Umgebung"
 python3 -m venv /opt/quotebox/venv
-$STD /opt/quotebox/venv/bin/pip install --upgrade pip
-$STD /opt/quotebox/venv/bin/pip install -r /opt/quotebox/app/requirements.txt
+$STD /opt/quotebox/venv/bin/pip install --no-cache-dir --upgrade pip
+$STD /opt/quotebox/venv/bin/pip install --no-cache-dir -r /opt/quotebox/app/requirements.txt
 msg_ok "Python-Umgebung erstellt"
+
+msg_info "Setze Berechtigungen"
+chown -R quotebox:quotebox /opt/quotebox
+msg_ok "Berechtigungen gesetzt"
 
 msg_info "Aktiviere QuoteBox-Dienst"
 systemctl daemon-reload
@@ -69,7 +82,6 @@ fi
 msg_ok "Web-UI antwortet"
 
 msg_info "Prüfe Bind-Adresse (muss 0.0.0.0:5000 sein, nicht nur 127.0.0.1)"
-$STD apt-get install -y iproute2
 BIND_LINE=$(ss -tlnp 2>/dev/null | grep ":5000 " || true)
 if [[ -z "$BIND_LINE" ]]; then
   msg_error "Kein Listener auf Port 5000 gefunden! Vollständige 'ss -tlnp'-Ausgabe:"
@@ -90,3 +102,5 @@ msg_info "Bereinige"
 $STD apt-get -y autoremove
 $STD apt-get -y autoclean
 msg_ok "Bereinigt"
+
+msg_ok "QuoteBox-Installation abgeschlossen"

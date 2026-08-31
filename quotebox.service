@@ -5,6 +5,8 @@ Wants=network-online.target
 
 [Service]
 Type=simple
+User=quotebox
+Group=quotebox
 WorkingDirectory=/opt/quotebox/app
 Environment=PYTHONUNBUFFERED=1
 ExecStart=/opt/quotebox/venv/bin/uvicorn main:app --host 0.0.0.0 --port 5000
@@ -12,6 +14,13 @@ Restart=always
 RestartSec=5
 StandardOutput=journal
 StandardError=journal
+
+# Leichte Haertung: Dienst ohne Root-Rechte und ohne Schreibrechte im System.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=full
+ReadWritePaths=/opt/quotebox/app/data
 
 [Install]
 WantedBy=multi-user.target

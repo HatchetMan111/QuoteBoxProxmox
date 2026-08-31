@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import random
 import threading
+import time
 from pathlib import Path
 
 from fastapi import FastAPI, Request
@@ -44,21 +45,67 @@ DEFAULT_SETTINGS = {
 
 _lock = threading.Lock()
 _quotes_cache: list[dict] = []
+_last_quote_key: tuple[str, str] | None = None  # (category, text) des letzten Spruchs
+
+
+def _seed_quotes() -> list[dict]:
+    return json.loads(SEED_FILE.read_text(encoding="utf-8"))
+
+
+def _read_user_quotes() -> list[dict] | None:
+    """Liest quotes.json; bei korrupter Datei wird sie gesichert und neu eingespeist."""
+    try:
+        return json.loads(QUOTES_FILE.read_text(encoding="utf-8"))
+    except FileNotFoundError:
+        return None
+    except (json.JSONDecodeError, OSError) as exc:
+        backup = QUOTES_FILE.with_suffix(f".corrupt-{int(time.time())}.json")
+        try:
+            QUOTES_FILE.replace(backup)
+        except OSError:
+            pass
+        print(f"QuoteBox: quotes.json unlesbar ({exc}) -> gesichert als {backup.name}, Seed wird neu eingespielt")
+        return None
+
+
+def _valid_quotes(quotes: list) -> list[dict]:
+    """Behaelt nur brauchbare Eintraege: Text vorhanden, Kategorie bekannt oder zumindest Text+Kategorie als String."""
+    out = []
+    for q in quotes:
+        if not isinstance(q, dict):
+            continue
+        text = q.get("text")
+        category = q.get("category")
+        if not isinstance(text, str) or not text.strip():
+            continue
+        if not isinstance(category, str) or not category:
+            continue
+        out.append(q)
+    return out
 
 
 def _ensure_quotes_file() -> None:
     """Kopiert den Seed-Datensatz einmalig, falls noch keine quotes.json existiert."""
     if not QUOTES_FILE.exists():
-        seed = json.loads(SEED_FILE.read_text(encoding="utf-8"))
-        QUOTES_FILE.write_text(json.dumps(seed, ensure_ascii=False, indent=2), encoding="utf-8")
+        QUOTES_FILE.write_text(
+            json.dumps(_seed_quotes(), ensure_ascii=False, indent=2), encoding="utf-8"
+        )
 
 
 def load_quotes(force: bool = False) -> list[dict]:
+    """Laedt die Sprueche; faellt bei Problemen automatisch auf den Seed zurueck."""
     global _quotes_cache
     with _lock:
         if force or not _quotes_cache:
             _ensure_quotes_file()
-            _quotes_cache = json.loads(QUOTES_FILE.read_text(encoding="utf-8"))
+            user_quotes = _read_user_quotes()
+            valid = _valid_quotes(user_quotes) if user_quotes is not None else []
+            if valid:
+                _quotes_cache = valid
+            else:
+                if user_quotes is not None:
+                    print("QuoteBox: quotes.json enthaelt keine gueltigen Eintraege -> Seed-Daten werden angezeigt")
+                _quotes_cache = _valid_quotes(_seed_quotes())
         return _quotes_cache
 
 
@@ -68,10 +115,14 @@ def load_settings() -> dict:
         return dict(DEFAULT_SETTINGS)
     try:
         data = json.loads(SETTINGS_FILE.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        data = dict(DEFAULT_SETTINGS)
+        if not isinstance(data, dict):
+            raise ValueError("settings.json ist kein Objekt")
+    except (json.JSONDecodeError, OSError, ValueError):
+        data = {}
     merged = dict(DEFAULT_SETTINGS)
     merged.update({k: v for k, v in data.items() if k in DEFAULT_SETTINGS})
+    if merged["active_categories"] not in (None, []) and not isinstance(merged["active_categories"], list):
+        merged["active_categories"] = list(CATEGORIES.keys())
     return merged
 
 
@@ -97,9 +148,7 @@ def health() -> JSONResponse:
 
 @app.get("/api/categories")
 def api_categories() -> JSONResponse:
-    return JSONResponse(
-        [{"key": key, **meta} for key, meta in CATEGORIES.items()]
-    )
+    return JSONResponse([{"key": key, **meta} for key, meta in CATEGORIES.items()])
 
 
 @app.get("/api/settings")
@@ -109,17 +158,23 @@ def api_get_settings() -> JSONResponse:
 
 @app.post("/api/settings")
 async def api_set_settings(request: Request) -> JSONResponse:
-    body = await request.json()
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"detail": "Body ist kein gueltiges JSON"}, status_code=400)
+    if not isinstance(body, dict):
+        return JSONResponse({"detail": "Body muss ein JSON-Objekt sein"}, status_code=400)
+
     current = load_settings()
 
     active = body.get("active_categories")
-    if isinstance(active, list) and active:
-        current["active_categories"] = [c for c in active if c in CATEGORIES]
-    if not current["active_categories"]:
-        current["active_categories"] = list(CATEGORIES.keys())
+    if isinstance(active, list):
+        cleaned = [c for c in active if isinstance(c, str) and c in CATEGORIES]
+        if cleaned:
+            current["active_categories"] = cleaned
 
     interval = body.get("interval_seconds")
-    if isinstance(interval, (int, float)) and 3 <= interval <= 600:
+    if isinstance(interval, (int, float)) and not isinstance(interval, bool) and 3 <= interval <= 600:
         current["interval_seconds"] = int(interval)
 
     theme = body.get("theme")
@@ -130,24 +185,53 @@ async def api_set_settings(request: Request) -> JSONResponse:
     if isinstance(show_clock, bool):
         current["show_clock"] = show_clock
 
+    if not current["active_categories"]:
+        current["active_categories"] = list(CATEGORIES.keys())
+
     save_settings(current)
     return JSONResponse(current)
 
 
 @app.get("/api/quote")
 def api_quote() -> JSONResponse:
+    global _last_quote_key
     settings = load_settings()
-    active = settings["active_categories"] or list(CATEGORIES.keys())
-    quotes = [q for q in load_quotes() if q["category"] in active]
+    active = [c for c in settings["active_categories"] if c in CATEGORIES]
+    quotes = [q for q in load_quotes() if q.get("category") in active] if active else load_quotes()
     if not quotes:
         quotes = load_quotes()
+    if not quotes:
+        return JSONResponse(
+            {
+                "text": "Sprüche-Datei ist leer.",
+                "author": "QuoteBox",
+                "category": "quote",
+                "category_label": "QuoteBox",
+                "icon": "quote.svg",
+                "accent": "#a69c8c",
+            }
+        )
 
+    # Sofortige Wiederholung vermeiden (fuer ein Wand-Tablet wirkt das sonst wie ein Haenger)
     chosen = random.choice(quotes)
-    meta = CATEGORIES.get(chosen["category"], {"label": chosen["category"], "icon": "quote.svg", "accent": "#a69c8c"})
+    key = (str(chosen.get("category", "")), str(chosen.get("text", "")))
+    if len(quotes) > 1:
+        for _ in range(10):
+            if key != _last_quote_key:
+                break
+            chosen = random.choice(quotes)
+            key = (str(chosen.get("category", "")), str(chosen.get("text", "")))
+    _last_quote_key = key
+
+    meta = CATEGORIES.get(
+        chosen["category"],
+        {"label": chosen["category"].capitalize(), "icon": "quote.svg", "accent": "#a69c8c"},
+    )
+    author = chosen.get("author")
     return JSONResponse(
         {
             "text": chosen["text"],
-            "author": chosen.get("author", ""),
+            "author": author if isinstance(author, str) else "",
             "category": chosen["category"],
             "category_label": meta["label"],
             "icon": meta["icon"],
