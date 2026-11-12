@@ -32,9 +32,9 @@ def render(size: int) -> Image.Image:
     return img
 
 for out, size in [
-    ("app/static/pwa-icon-512.png", 512),
-    ("app/static/pwa-icon-192.png", 192),
-    ("app/static/apple-touch-icon.png", 180),
+    ("frontend/public/pwa-icon-512.png", 512),
+    ("frontend/public/pwa-icon-192.png", 192),
+    ("frontend/public/apple-touch-icon.png", 180),
 ]:
     render(size).save(out, "PNG")
     print("geschrieben:", out, size)

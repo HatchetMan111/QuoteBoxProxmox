@@ -2,9 +2,13 @@
 QuoteBox - kleine lokale Spruch-Anzeige fuer ein Wand-Tablet.
 
 Laeuft komplett lokal (keine externen Aufrufe im Betrieb):
-- /display  -> Vollbild-Ansicht fuer das Tablet
-- /settings -> Kategorien, Intervall, Theme, Uhrzeit an/aus
+- /display  -> Vollbild-Ansicht fuer das Tablet (React-SPA)
+- /settings -> Kategorien, Intervall, Theme, Uhrzeit an/aus (React-SPA)
 - /api/*    -> kleine JSON-API fuer die beiden Seiten
+
+Das Frontend wird mit Vite gebaut (frontend/, Output: app/dist) und als
+fertige statische Dateien ausgeliefert - im Container ist dafuer kein
+Node noetig.
 """
 from __future__ import annotations
 
@@ -15,15 +19,16 @@ import time
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
 
 BASE_DIR = Path(__file__).resolve().parent
 DATA_DIR = BASE_DIR / "data"
 SEED_FILE = DATA_DIR / "seed" / "quotes.json"
 QUOTES_FILE = DATA_DIR / "quotes.json"
 SETTINGS_FILE = DATA_DIR / "settings.json"
+DIST_DIR = BASE_DIR / "dist"
+INDEX_FILE = DIST_DIR / "index.html"
 
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -65,7 +70,9 @@ def _read_user_quotes() -> list[dict] | None:
     except FileNotFoundError:
         return None
     except (json.JSONDecodeError, OSError) as exc:
-        backup = QUOTES_FILE.with_suffix(f".corrupt-{int(time.time())}.json")
+        # Name wie in der README dokumentiert: quotes.json.corrupt-<ms>.json
+        # (Path.with_suffix() wuerde stattdessen quotes.corrupt-....json liefern)
+        backup = QUOTES_FILE.parent / (QUOTES_FILE.name + f".corrupt-{int(time.time() * 1000)}.json")
         try:
             QUOTES_FILE.replace(backup)
         except OSError:
@@ -127,8 +134,17 @@ def load_settings() -> dict:
         data = {}
     merged = dict(DEFAULT_SETTINGS)
     merged.update({k: v for k, v in data.items() if k in DEFAULT_SETTINGS})
-    if merged["active_categories"] not in (None, []) and not isinstance(merged["active_categories"], list):
-        merged["active_categories"] = list(CATEGORIES.keys())
+
+    # Haertung: Nur nicht-leere Listen bekannter Kategorien durchlassen. Sonst
+    # (null, [], unbekannte Schluessel) greift der Default - frueher krachte
+    # /api/quote hier mit 500, wenn settings.json "active_categories": null enthielt.
+    if not isinstance(merged["active_categories"], list):
+        merged["active_categories"] = list(DEFAULT_SETTINGS["active_categories"])
+    else:
+        known = [c for c in merged["active_categories"] if isinstance(c, str) and c in CATEGORIES]
+        if not known:
+            known = list(DEFAULT_SETTINGS["active_categories"])
+        merged["active_categories"] = known
     return merged
 
 
@@ -138,8 +154,16 @@ def save_settings(settings: dict) -> None:
 
 
 app = FastAPI(title="QuoteBox")
-app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
-templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
+
+
+def _spa_page() -> FileResponse | JSONResponse:
+    """Liefert die gebaute React-SPA; ohne Build einen verstaendlichen Hinweis."""
+    if INDEX_FILE.exists():
+        return FileResponse(INDEX_FILE, media_type="text/html")
+    return JSONResponse(
+        {"detail": "Frontend nicht gebaut: cd frontend && npm ci && npm run build (app/dist fehlt)"},
+        status_code=503,
+    )
 
 
 @app.get("/")
@@ -270,10 +294,17 @@ def api_reload() -> JSONResponse:
 
 
 @app.get("/display")
-def display_page(request: Request):
-    return templates.TemplateResponse("display.html", {"request": request})
+def display_page():
+    return _spa_page()
 
 
 @app.get("/settings")
-def settings_page(request: Request):
-    return templates.TemplateResponse("settings.html", {"request": request})
+def settings_page():
+    return _spa_page()
+
+
+# SPA-Fallback ganz zum Schluss: alle uebrigen Pfade werden aus dem Build-Ordner
+# bedient (gehashte Assets unter /assets, Manifest/Favicon/PNG-Icons im Root).
+# Explizit definierte Routen (/, /health, /api/*, /display, /settings) haben
+# Vorrang, weil Starlette sie in Definitionsreihenfolge matcht.
+app.mount("/", StaticFiles(directory=str(DIST_DIR), html=True, check_dir=False), name="spa")

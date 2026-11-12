@@ -2,4 +2,6 @@ __pycache__/
 *.pyc
 app/data/quotes.json
 app/data/settings.json
+app/dist/.vite/
 venv/
+frontend/node_modules/

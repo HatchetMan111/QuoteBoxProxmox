@@ -2,6 +2,8 @@
 
 Lokale Sprüche-Anzeige für ein altes Tablet als Wand-Eye-Catcher. Läuft als LXC-Container auf Proxmox, komplett lokal (kein Cloud-Dienst nötig).
 
+Die Weboberfläche ist eine **React/Vite-SPA** (vorgebaut unter `app/dist/`, wird ausgeliefert – im Container läuft dafür **kein Node**). Das FastAPI-Backend dient nur noch der JSON-API (`/api/*`, `/health`) und stellt die gebauten Seiten bereit.
+
 Kategorien: **Stoisch**, **Kalendersprüche**, **Motivation**, **Zen**, **Humor** und **Zufall** (würfelt über alle Kategorien) – jeweils mit passendem Icon, in den Einstellungen frei kombinierbar.
 
 - `http://<LXC-IP>:5000/display` – Vollbild-Ansicht fürs Tablet. **Tipp auf die Plakette** (oder Leertaste/Pfeil-rechts) holt sofort den nächsten Spruch. Über den Expand-Button unten rechts lässt sich der Browser-Vollbildmodus aktivieren.
@@ -89,6 +91,8 @@ Lösung: dem CT eine feste, freie IP geben (`pct set <CTID> --net0 name=eth0,bri
 
 ## Lokaler Test ohne Proxmox
 
+Das fertige Frontend (`app/dist/`) liegt im Repo – zum Ausprobieren reicht Python:
+
 ```bash
 cd app
 python3 -m venv venv && source venv/bin/activate
@@ -97,3 +101,23 @@ uvicorn main:app --host 0.0.0.0 --port 5000
 ```
 
 Danach `http://localhost:5000/display` und `http://localhost:5000/settings` im Browser öffnen.
+
+### Frontend selbst bauen / entwickeln
+
+Zum Ändern der Weboberfläche (Node ≥ 18 nötig, nur auf dem Entwicklungsgerät – nicht im Container):
+
+```bash
+cd frontend
+npm install
+npm run build     # baut nach ../app/dist (wird mit-committet)
+npm run dev       # Dev-Server mit Proxy auf 127.0.0.1:5000 (Backend separat starten)
+```
+
+### API-Tests
+
+```bash
+pip install pytest httpx fastapi
+pytest tests/ -v
+```
+
+Die Tests prüfen Settings-Validierung, Spruch-Auswahl (Kategoriefilter, keine Sofort-Wiederholung), Wiederherstellung bei kaputter `quotes.json` und die SPA-Auslieferung.

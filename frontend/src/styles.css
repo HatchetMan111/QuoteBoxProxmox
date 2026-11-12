@@ -1,28 +1,33 @@
 /* QuoteBox – Design: gravierte Wandplakette.
    Ein ruhiges, dunkles "Museumsschild" als gemeinsame Form für alle Kategorien;
-   die Kategorie liefert nur den Akzentton und das Medaillon-Icon. */
+   die Kategorie liefert nur den Akzentton und das Medaillon-Icon.
+   Kein color-mix(): aeltere Tablet-Browser -> stattdessen rgba() aus JS. */
 
-:root {
+:root,
+html[data-theme="dark"] {
   --bg: #14120f;
   --panel: #1e1b17;
   --text: #ede6d6;
   --muted: #a69c8c;
   --accent: #b08d57;
+  --border: rgba(166, 156, 140, 0.28);
+  --shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
   --serif: Georgia, "Iowan Old Style", "Palatino Linotype", "Times New Roman", serif;
   --sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
-body.theme-light {
+html[data-theme="light"] {
   --bg: #ede6d6;
   --panel: #f6f1e7;
   --text: #201d19;
   --muted: #6b6255;
+  --accent: #9a7440;
+  --border: rgba(32, 29, 25, 0.18);
+  --shadow: 0 18px 45px rgba(32, 29, 25, 0.18);
 }
 
 * { box-sizing: border-box; }
 
-/* Versteckte Elemente bleiben versteckt, auch wenn eine Klasse display setzt
-   (war der Grund fuer die immer sichtbare "Einstellungen konnten nicht geladen werden"-Box) */
 [hidden] { display: none !important; }
 
 html, body {
@@ -35,6 +40,8 @@ html, body {
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
+
+#root { height: 100%; }
 
 button { font: inherit; }
 
@@ -56,36 +63,50 @@ button { font: inherit; }
     radial-gradient(ellipse at center, rgba(255, 255, 255, 0.035) 0%, rgba(0, 0, 0, 0) 60%),
     var(--bg);
   padding: 4vh 4vw;
+  transition: filter 2.5s ease;
 }
 
-body.theme-light .stage {
+html[data-theme="light"] .stage {
   background:
     radial-gradient(ellipse at center, rgba(0, 0, 0, 0.025) 0%, rgba(0, 0, 0, 0) 60%),
     var(--bg);
 }
 
+.stage.night-dim { filter: brightness(0.35); }
+
+.night-veil {
+  position: fixed;
+  inset: 0;
+  background: #000;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 50;
+  transition: opacity 2.5s ease;
+}
+
+.night-veil.visible { opacity: 1; }
+
 .plaque {
   position: relative;
   max-width: 920px;
   width: 100%;
-  padding: 6vh 5vw;
+  padding: 6vh 5vw 4.2rem;
   text-align: center;
   border: 1px solid var(--accent);
   background: var(--panel);
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.30);
+  box-shadow: var(--shadow);
   cursor: pointer;
   user-select: none;
   transition: opacity 0.5s ease, transform 0.5s ease, border-color 0.6s ease, box-shadow 0.2s ease;
 }
 
-body.theme-light .plaque { box-shadow: 0 18px 45px rgba(32, 29, 25, 0.18); }
-
 .plaque::before {
   content: "";
   position: absolute;
   inset: 10px;
-  border: 1px solid var(--accent); /* Fallback fuer Browser ohne color-mix (aeltere Tablets) */
-  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  border: 1px solid var(--accent);
+  border-color: var(--accent); /* JS-seitig via --accent gesetzt; Ton hier bewusst voll */
+  opacity: 0.45;
   pointer-events: none;
 }
 
@@ -158,6 +179,29 @@ body.theme-light .plaque { box-shadow: 0 18px 45px rgba(32, 29, 25, 0.18); }
   color: var(--muted);
 }
 
+/* Feine Fortschritts-Linie: zeigt, wann der naechste Spruch kommt
+   (subtiler Lebenszeichen-Indikator fuer das Wand-Tablet). */
+.progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 2px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 100%;
+  transform-origin: left center;
+  animation: quote-progress linear forwards;
+}
+
+@keyframes quote-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 .clock {
   position: fixed;
   top: 4vh;
@@ -165,12 +209,9 @@ body.theme-light .plaque { box-shadow: 0 18px 45px rgba(32, 29, 25, 0.18); }
   text-align: right;
   font-family: var(--sans);
   color: var(--muted);
-  opacity: 0;
-  transition: opacity 0.4s ease;
   pointer-events: none;
 }
 
-.clock.visible { opacity: 0.85; }
 .clock .time { font-size: 2rem; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; }
 .clock .date { font-size: 0.78rem; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 0.15rem; }
 
@@ -196,28 +237,6 @@ body.theme-light .plaque { box-shadow: 0 18px 45px rgba(32, 29, 25, 0.18); }
 .gear-link { bottom: 2.5vh; right: 2.5vw; }
 .fs-link { bottom: calc(2.5vh + 52px); right: 2.5vw; }
 
-/* ---------- Nachtabsenkung ---------- */
-
-.stage { transition: filter 2.5s ease; }
-
-body.night-dim .stage { filter: brightness(0.35); }
-
-.night-veil {
-  position: fixed;
-  inset: 0;
-  background: #000;
-  opacity: 0;
-  pointer-events: none;
-  z-index: 50;
-  transition: opacity 2.5s ease;
-}
-
-body.night-black .night-veil { opacity: 1; }
-
-@media (prefers-reduced-motion: reduce) {
-  .plaque, .medallion, .medallion svg, .rule, .category-label, .stage, .night-veil { transition: none; }
-}
-
 /* ---------- Settings-Ansicht ---------- */
 
 .settings-wrap {
@@ -235,10 +254,8 @@ body.night-black .night-veil { opacity: 1; }
   border: 1px solid var(--accent);
   padding: 2.4rem 2.2rem;
   height: fit-content;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--shadow);
 }
-
-body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12); }
 
 .settings-card h1 {
   font-family: var(--serif);
@@ -252,6 +269,8 @@ body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12)
   font-size: 0.85rem;
   margin: 0 0 2rem;
 }
+
+.loading-note { color: var(--muted); font-size: 0.88rem; }
 
 .field-group { margin-bottom: 1.8rem; }
 
@@ -276,7 +295,7 @@ body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12)
 .load-error {
   border: 1px solid #a3552f;
   color: var(--text);
-  background: color-mix(in srgb, #a3552f 12%, transparent);
+  background: rgba(163, 85, 47, 0.12);
   padding: 1rem;
   font-size: 0.88rem;
   display: flex;
@@ -307,7 +326,7 @@ body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12)
   gap: 0.55rem;
   padding: 0.75rem 0.8rem;
   background: transparent;
-  border: 1px solid var(--muted);
+  border: 1px solid var(--border);
   color: var(--text);
   cursor: pointer;
   user-select: none;
@@ -317,12 +336,7 @@ body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12)
 }
 
 .category-option:hover { border-color: var(--cat-accent, var(--accent)); }
-.category-option.active {
-  border-color: var(--cat-accent, var(--accent));
-  color: var(--cat-accent, var(--accent));
-  background: color-mix(in srgb, var(--cat-accent, var(--accent)) 8%, transparent);
-}
-
+.category-option .icon-holder { display: inline-flex; flex-shrink: 0; }
 .category-option svg { width: 18px; height: 18px; flex-shrink: 0; }
 
 .grid-hint {
@@ -334,7 +348,7 @@ body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12)
 }
 .grid-hint.visible { opacity: 1; }
 
-/* Range-Slider: grosszuegige Touch-Flaeche, dezent im Plaketten-Look */
+/* Range-Slider: grosszuegige Touch-Flaeche, gefuellter Track via --fill (JS) */
 .range-row { display: flex; align-items: center; gap: 1rem; }
 .range-row input[type="range"] {
   flex: 1;
@@ -347,7 +361,7 @@ body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12)
 }
 .range-row input[type="range"]::-webkit-slider-runnable-track {
   height: 2px;
-  background: var(--muted);
+  background: linear-gradient(to right, var(--accent) var(--fill, 0%), var(--muted) var(--fill, 0%));
 }
 .range-row input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
@@ -360,7 +374,7 @@ body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12)
 }
 .range-row input[type="range"]::-moz-range-track {
   height: 2px;
-  background: var(--muted);
+  background: linear-gradient(to right, var(--accent) var(--fill, 0%), var(--muted) var(--fill, 0%));
 }
 .range-row input[type="range"]::-moz-range-thumb {
   width: 20px;
@@ -376,28 +390,41 @@ body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12)
   align-items: center;
   justify-content: space-between;
   padding: 0.6rem 0;
-  border-bottom: 1px solid var(--muted); /* Fallback fuer color-mix */
-  border-bottom-color: color-mix(in srgb, var(--muted) 25%, transparent);
+  border-bottom: 1px solid var(--border);
 }
 .toggle-row:last-child { border-bottom: none; }
 
 .theme-choice { display: flex; gap: 0.6rem; }
 .theme-choice button {
   flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 0.75rem;
   background: transparent;
-  border: 1px solid var(--muted);
+  border: 1px solid var(--border);
   color: var(--text);
   cursor: pointer;
   font-size: 0.85rem;
   transition: border-color 0.15s ease, color 0.15s ease;
 }
-.theme-choice button:hover { border-color: var(--accent); }
+.theme-choice button:hover:not(:disabled) { border-color: var(--accent); }
 .theme-choice button.active { border-color: var(--accent); color: var(--accent); }
 .theme-choice button:disabled { opacity: 0.4; cursor: default; }
 
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.swatch-dark { background: #14120f; }
+.swatch-light { background: #f6f1e7; }
+
 /* Nachtabsenkung (Settings) */
-.night-details { margin-top: 0.9rem; }
+.night-details { margin-top: 0.9rem; transition: opacity 0.2s ease; }
 .night-details.disabled { opacity: 0.5; }
 .night-mode-choice { margin-bottom: 0.9rem; }
 
@@ -409,18 +436,25 @@ body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12)
 }
 
 .night-times select {
-  background: transparent;
-  border: 1px solid var(--muted);
+  background: var(--panel);
+  border: 1px solid var(--border);
   color: var(--text);
   font-family: var(--sans);
   font-size: 0.88rem;
   padding: 0.45rem 0.5rem;
   cursor: pointer;
 }
-.night-times select:hover, .night-times select:focus-visible { border-color: var(--accent); }
+.night-times select:hover:not(:disabled),
+.night-times select:focus-visible:not(:disabled) { border-color: var(--accent); }
 .night-times select:disabled { opacity: 0.5; cursor: default; }
 
 .night-note { color: var(--muted); font-size: 0.8rem; }
+
+.night-warning {
+  margin-top: 0.7rem;
+  font-size: 0.78rem;
+  color: #c98a5b;
+}
 
 .save-bar { display: flex; align-items: center; gap: 1rem; margin-top: 1.4rem; }
 
@@ -440,6 +474,7 @@ body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12)
 .save-btn:disabled { opacity: 0.45; cursor: default; }
 
 .save-status { font-size: 0.82rem; color: var(--muted); }
+.save-status.error { color: #c96b4b; }
 
 .back-link {
   display: inline-block;
@@ -455,8 +490,7 @@ body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12)
 .switch { position: relative; width: 42px; height: 24px; flex-shrink: 0; }
 .switch input { opacity: 0; width: 0; height: 0; }
 .switch .track {
-  position: absolute; inset: 0; background: var(--muted); /* Fallback fuer color-mix */
-  background: color-mix(in srgb, var(--muted) 35%, transparent);
+  position: absolute; inset: 0; background: var(--border);
   cursor: pointer; transition: background 0.2s ease;
 }
 .switch .thumb {
@@ -473,5 +507,7 @@ body.theme-light .settings-card { box-shadow: 0 12px 30px rgba(32, 29, 25, 0.12)
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .plaque, .medallion, .medallion svg, .rule, .category-label, .stage, .night-veil { transition: none; }
+  .progress-bar { animation: none; }
   .category-option, .theme-choice button, .save-btn, .switch .thumb, .switch .track { transition: none; }
 }
