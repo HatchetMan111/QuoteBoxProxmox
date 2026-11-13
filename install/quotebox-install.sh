@@ -6,17 +6,34 @@
 
 # FUNCTIONS_FILE_PATH setzt der community-scripts-Ablauf auf dem Host (export).
 # Beim eigenständigen Aufruf (ct/quotebox.sh ruft dieses Skript direkt im
-# Container auf) laden wir die Funktionen hier selbst nach.
+# Container auf) laden wir die Funktionen hier selbst nach. Das Projekt hat
+# die Funktionsdateien ins eigene Repo "core" umgezogen (ProxmoxVE/misc
+# existiert dort nicht mehr, Stand 2026-11): lxc/install.func ist ein
+# All-in-One-Bootstrap, der core.func/error_handler.func selbst nachlädt.
 if [[ -z "${FUNCTIONS_FILE_PATH:-}" ]]; then
-  # jsDelivr-Fallback, falls raw.githubusercontent.com nicht antwortet
-  FUNCTIONS_FILE_PATH="$(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/install.func \
-    || curl -fsSL https://cdn.jsdelivr.net/gh/community-scripts/ProxmoxVE@main/misc/install.func)"
+  QB_FUNC=""
+  for QB_URL in \
+    "https://raw.githubusercontent.com/community-scripts/core/main/lxc/install.func" \
+    "https://cdn.jsdelivr.net/gh/community-scripts/core@main/lxc/install.func" \
+    "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/install.func"; do
+    if curl -fsSL "$QB_URL" -o /tmp/quotebox-install.func 2>/dev/null && [[ -s /tmp/quotebox-install.func ]]; then
+      QB_FUNC="$QB_URL"
+      break
+    fi
+  done
+  if [[ -z "$QB_FUNC" ]]; then
+    echo "FEHLER: install.func war von keiner Quelle ladbar (raw.githubusercontent.com und cdn.jsdelivr.net)." >&2
+    echo "Netzwerk/DNS im Container pruefen und die Installation erneut ausfuehren." >&2
+    exit 1
+  fi
+  FUNCTIONS_FILE_PATH="/tmp/quotebox-install.func"
 fi
-if [[ -z "$FUNCTIONS_FILE_PATH" ]]; then
+if [[ -z "$FUNCTIONS_FILE_PATH" || ! -s "$FUNCTIONS_FILE_PATH" ]]; then
   echo "FEHLER: Install-Funktionen (install.func) konnten nicht geladen werden." >&2
   exit 1
 fi
 source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
+rm -f /tmp/quotebox-install.func
 
 if ! declare -F msg_info >/dev/null 2>&1; then
   echo "FEHLER: Install-Funktionen unvollständig (msg_info fehlt)." >&2

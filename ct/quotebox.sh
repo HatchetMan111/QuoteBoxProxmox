@@ -1,7 +1,32 @@
 #!/usr/bin/env bash
-# build.func laden – mit jsDelivr-Fallback, falls raw.githubusercontent.com zickt (z. B. HTTP 400)
-source <(curl -fsSL https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func \
-  || curl -fsSL https://cdn.jsdelivr.net/gh/community-scripts/ProxmoxVE@main/misc/build.func)
+# build.func laden – das community-scripts-Projekt hat die Funktionsdateien ins
+# eigene Repo "core" umgezogen (ProxmoxVE/misc existiert dort nicht mehr, Stand
+# 2026-11). Kette: raw -> jsDelivr -> alter ProxmoxVE-Pfad als Legacy-Fallback.
+QB_BOOT=""
+for QB_URL in \
+  "https://raw.githubusercontent.com/community-scripts/core/main/core/build.func" \
+  "https://cdn.jsdelivr.net/gh/community-scripts/core@main/core/build.func" \
+  "https://raw.githubusercontent.com/community-scripts/ProxmoxVE/main/misc/build.func"; do
+  if curl -fsSL "$QB_URL" -o /tmp/quotebox-build.func 2>/dev/null && [[ -s /tmp/quotebox-build.func ]]; then
+    QB_BOOT="$QB_URL"
+    break
+  fi
+done
+if [[ -z "$QB_BOOT" ]]; then
+  echo "FEHLER: build.func war von keiner Quelle ladbar (raw.githubusercontent.com und cdn.jsdelivr.net)." >&2
+  echo "Netzwerk/DNS auf dem Host pruefen und den Einzeiler erneut ausfuehren." >&2
+  exit 1
+fi
+source /tmp/quotebox-build.func
+rm -f /tmp/quotebox-build.func
+# Fail-Fast: Fehlt eine Kernfunktion, sauber abbrechen, statt mit leerer CTID
+# kaskadieren (fuehrte sonst zu "pct exec: vmid type check failed - got ''").
+for QB_FN in header_info variables color catch_errors start build_container description msg_info msg_ok msg_error check_container_storage check_container_resources; do
+  if ! declare -F "$QB_FN" >/dev/null 2>&1; then
+    echo "FEHLER: build.func unvollstaendig geladen (Funktion '$QB_FN' fehlt) - Quelle: $QB_BOOT" >&2
+    exit 1
+  fi
+done
 # Copyright (c) 2021-2026 community-scripts ORG (Vorlage) / angepasst für QuoteBox
 # Author: HatchetMan111
 # License: MIT | https://github.com/community-scripts/ProxmoxVE/raw/main/LICENSE
