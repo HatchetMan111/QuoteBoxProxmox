@@ -16,13 +16,13 @@ Kategorien: **Stoisch**, **Kalendersprüche**, **Motivation**, **Zen**, **Humor*
 ## Installation (Proxmox-Host-Shell)
 
 ```bash
-bash -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/HatchetMan111/QuoteBoxProxmox@main/ct/quotebox.sh)"
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/QuoteBoxProxmox/main/ct/quotebox.sh)"
 ```
 
-Alternativ direkt von GitHub (falls jsDelivr mal nicht erreichbar oder veraltet ist):
+Diese URL ist immer auf dem neuesten Stand. Alternativ über jsDelivr (cacht Zweig-Referenzen zeitweise – nach frischen Pushes kann dort noch die alte Version stehen):
 
 ```bash
-bash -c "$(curl -fsSL https://raw.githubusercontent.com/HatchetMan111/QuoteBoxProxmox/main/ct/quotebox.sh)"
+bash -c "$(curl -fsSL https://cdn.jsdelivr.net/gh/HatchetMan111/QuoteBoxProxmox@main/ct/quotebox.sh)"
 ```
 
 Das Skript fragt CT-ID, Ressourcen etc. ab (Standard: 1 vCPU, 512 MB RAM, 4 GB Disk, Debian 12, unprivilegiert), baut den Container, installiert die App darin und prüft am Ende selbst:
