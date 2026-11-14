@@ -1,4 +1,9 @@
 #!/usr/bin/env bash
+# Fork-Basis VOR allem Sourcing setzen: Der Engine-Loader holt
+# install/<app>-install.sh von dieser Basis und leitet sie auch in den
+# Container weiter. Ohne diesen Verweis sucht er im community-scripts-Repo,
+# findet dort nichts und bricht ab ("is not in ..."). Uebersteuerbar fuer Tests.
+export COMMUNITY_SCRIPTS_URL="${COMMUNITY_SCRIPTS_URL:-https://raw.githubusercontent.com/HatchetMan111/QuoteBoxProxmox/main}"
 # build.func laden – das community-scripts-Projekt hat die Funktionsdateien ins
 # eigene Repo "core" umgezogen (ProxmoxVE/misc existiert dort nicht mehr, Stand
 # 2026-11). Kette: raw -> jsDelivr -> alter ProxmoxVE-Pfad als Legacy-Fallback.
@@ -40,11 +45,6 @@ var_disk="${var_disk:-4}"
 var_os="${var_os:-debian}"
 var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-1}"
-
-# Fork-Basis: Der Engine-Loader holt install/<APP-lowercase>-install.sh von der
-# Scripts-Basis. Ohne diesen Verweis sucht er im community-scripts-Repo, findet
-# dort nichts und bricht ab ("is not in ..."). Uebersteuerbar fuer Tests.
-export COMMUNITY_SCRIPTS_URL="${COMMUNITY_SCRIPTS_URL:-https://raw.githubusercontent.com/HatchetMan111/QuoteBoxProxmox/main}"
 
 header_info "$APP"
 variables
