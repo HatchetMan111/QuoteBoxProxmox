@@ -41,6 +41,11 @@ var_os="${var_os:-debian}"
 var_version="${var_version:-12}"
 var_unprivileged="${var_unprivileged:-1}"
 
+# Fork-Basis: Der Engine-Loader holt install/<APP-lowercase>-install.sh von der
+# Scripts-Basis. Ohne diesen Verweis sucht er im community-scripts-Repo, findet
+# dort nichts und bricht ab ("is not in ..."). Uebersteuerbar fuer Tests.
+export COMMUNITY_SCRIPTS_URL="${COMMUNITY_SCRIPTS_URL:-https://raw.githubusercontent.com/HatchetMan111/QuoteBoxProxmox/main}"
+
 header_info "$APP"
 variables
 color
@@ -135,10 +140,10 @@ function update_script() {
 start
 build_container
 
-# build.func lädt das In-Container-Install-Skript ausschließlich aus dem
-# community-scripts-Repo (dort existiert quotebox-install.sh nicht -> stiller
-# No-Op). Deshalb installieren wir hier explizit aus unserem eigenen Repo
-# (idempotent, mit hartem Abbruch bei Fehlern).
+# Der Engine-Loader installiert bereits aus COMMUNITY_SCRIPTS_URL (oben gesetzt).
+# Dieser Schritt ist das idempotente Sicherheitsnetz: Falls die Engine-Install
+# aus irgendeinem Grund ausgesetzt hat, holen wir hier selbst nach (mit hartem
+# Abbruch bei Fehlern; ist der Dienst schon da, tut dieser Block nichts).
 msg_info "Installiere ${APP} im Container"
 if pct exec "$CTID" -- test -f /etc/systemd/system/quotebox.service 2>/dev/null; then
   msg_ok "${APP} ist bereits installiert"
