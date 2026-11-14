@@ -4,13 +4,19 @@
 # License: MIT
 # Source: https://github.com/HatchetMan111/QuoteBoxProxmox
 
-# FUNCTIONS_FILE_PATH setzt der community-scripts-Ablauf auf dem Host (export).
-# Beim eigenständigen Aufruf (ct/quotebox.sh ruft dieses Skript direkt im
-# Container auf) laden wir die Funktionen hier selbst nach. Das Projekt hat
-# die Funktionsdateien ins eigene Repo "core" umgezogen (ProxmoxVE/misc
-# existiert dort nicht mehr, Stand 2026-11): lxc/install.func ist ein
-# All-in-One-Bootstrap, der core.func/error_handler.func selbst nachlädt.
-if [[ -z "${FUNCTIONS_FILE_PATH:-}" ]]; then
+# FUNCTIONS_FILE_PATH kommt in zwei Modi:
+#  a) Engine-Modus: Der core-Loader exportiert den Skript-TEXT selbst als Env
+#     (backend.func: FUNCTIONS_FILE_PATH="$(_cs_fetch_text "lxc/install.func)") -
+#     dann ist der Wert kein Pfad, sondern der Funktionsumfang als String und
+#     wird via /dev/stdin gesourced. (Ein "-s $VAR"-Check hier waere der Bug:
+#     bash wuerde versuchen, den mehr-KB-Text als Dateinamen zu oeffnen.)
+#  b) Standalone-Modus (ct/quotebox.sh ruft das Skript direkt im Container auf):
+#     Variable leer -> selbst von community-scripts/core laden; die geladene
+#     Datei liegt dann als Pfad vor und wird direkt gesourced.
+QB_SOURCE_STDIN=false
+if [[ -n "${FUNCTIONS_FILE_PATH:-}" && ! -f "$FUNCTIONS_FILE_PATH" ]]; then
+  QB_SOURCE_STDIN=true   # Inhalt-Modus (oder nicht-existierender Pfad -> naechste Pruefung greift)
+elif [[ -z "${FUNCTIONS_FILE_PATH:-}" ]]; then
   QB_FUNC=""
   for QB_URL in \
     "https://raw.githubusercontent.com/community-scripts/core/main/lxc/install.func" \
@@ -26,13 +32,22 @@ if [[ -z "${FUNCTIONS_FILE_PATH:-}" ]]; then
     echo "Netzwerk/DNS im Container pruefen und die Installation erneut ausfuehren." >&2
     exit 1
   fi
-  FUNCTIONS_FILE_PATH="/tmp/quotebox-install.func"
+  FUNCTIONS_FILE_PATH="/tmp/quotebox-install.func"   # Pfad-Modus fuer das Sourcing unten
 fi
-if [[ -z "$FUNCTIONS_FILE_PATH" || ! -s "$FUNCTIONS_FILE_PATH" ]]; then
-  echo "FEHLER: Install-Funktionen (install.func) konnten nicht geladen werden." >&2
-  exit 1
+
+if [[ "$QB_SOURCE_STDIN" == true ]]; then
+  if [[ -z "${FUNCTIONS_FILE_PATH//[$' \t\r\n']/}" ]]; then
+    echo "FEHLER: Install-Funktionen (install.func) kamen leer vom Loader an." >&2
+    exit 1
+  fi
+  source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
+else
+  if [[ ! -s "${FUNCTIONS_FILE_PATH:-/nonexistent}" ]]; then
+    echo "FEHLER: Install-Funktionen (install.func) konnten nicht geladen werden." >&2
+    exit 1
+  fi
+  source "$FUNCTIONS_FILE_PATH"
 fi
-source /dev/stdin <<<"$FUNCTIONS_FILE_PATH"
 rm -f /tmp/quotebox-install.func
 
 if ! declare -F msg_info >/dev/null 2>&1; then
